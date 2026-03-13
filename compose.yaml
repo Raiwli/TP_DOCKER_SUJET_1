@@ -1,0 +1,155 @@
+services:
+
+  # ── API Gateway ──────────────────────────────────────
+  gateway:
+    build: ./gateway
+    ports:
+      - "80:80"
+    depends_on:
+      users:
+        condition: service_healthy
+      products:
+        condition: service_healthy
+      orders:
+        condition: service_healthy
+    networks:
+      - frontend
+    restart: unless-stopped
+
+  # ── Users Service ────────────────────────────────────
+  users:
+    build: ./services/users
+    env_file: .env
+    environment:
+      - DB_HOST=users-db
+      - DB_NAME=${USERS_DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      users-db:
+        condition: service_healthy
+    networks:
+      - frontend
+      - users-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  users-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${USERS_DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - users-data:/var/lib/postgresql/data
+    networks:
+      - users-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${USERS_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+
+  # ── Products Service ─────────────────────────────────
+  products:
+    build: ./services/products
+    env_file: .env
+    environment:
+      - DB_HOST=products-db
+      - DB_NAME=${PRODUCTS_DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      products-db:
+        condition: service_healthy
+    networks:
+      - frontend
+      - products-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5002/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  products-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${PRODUCTS_DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - products-data:/var/lib/postgresql/data
+    networks:
+      - products-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${PRODUCTS_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+
+  # ── Orders Service ───────────────────────────────────
+  orders:
+    build: ./services/orders
+    env_file: .env
+    environment:
+      - DB_HOST=orders-db
+      - DB_NAME=${ORDERS_DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      orders-db:
+        condition: service_healthy
+    networks:
+      - frontend
+      - orders-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5003/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  orders-db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${ORDERS_DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - orders-data:/var/lib/postgresql/data
+    networks:
+      - orders-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${ORDERS_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+
+networks:
+  frontend:
+    driver: bridge
+  users-network:
+    driver: bridge
+  products-network:
+    driver: bridge
+  orders-network:
+    driver: bridge
+
+volumes:
+  users-data:
+  products-data:
+  orders-data:
