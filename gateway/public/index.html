@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maison Volcanica - Client & Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-a"></div>
+    <div class="ambient ambient-b"></div>
+
+    <header class="topbar">
+      <div>
+        <p class="brand-kicker">Maison Volcanica</p>
+        <h1>Pizzeria de luxe absurde</h1>
+      </div>
+      <div class="topbar-actions">
+        <span id="health-pill" class="pill">API: verification...</span>
+        <button id="refresh-all" class="btn btn-gold" type="button">Rafraichir tout</button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Navigation principale">
+      <button class="tab active" data-view="client" type="button">Espace client</button>
+      <button class="tab" data-view="admin" type="button">Espace admin</button>
+    </nav>
+
+    <main>
+      <section id="view-client" class="view active">
+        <div class="layout client-layout">
+          <section class="panel panel-wide">
+            <div class="panel-head">
+              <h2>Catalogue pizzas premium</h2>
+              <p id="products-count" class="muted">0 pizza</p>
+            </div>
+            <div id="products" class="products-grid"></div>
+          </section>
+
+          <section class="panel">
+            <h2>Creer un compte client</h2>
+            <form id="user-form" class="stack">
+              <label>
+                Pseudo
+                <input name="username" type="text" required placeholder="ex: wayahine" />
+              </label>
+              <label>
+                Email
+                <input name="email" type="email" required placeholder="ex: toi@email.com" />
+              </label>
+              <label>
+                Mot de passe
+                <input name="password" type="password" required minlength="6" />
+              </label>
+              <button class="btn" type="submit">Creer le compte</button>
+            </form>
+            <p id="user-feedback" class="feedback"></p>
+          </section>
+
+          <section class="panel">
+            <h2>Commander une pizza</h2>
+            <form id="order-form" class="stack">
+              <label>
+                User ID
+                <input name="user_id" type="number" min="1" required placeholder="ex: 1" />
+              </label>
+              <label>
+                Product ID
+                <input name="product_id" type="number" min="1" required placeholder="ex: 2" />
+              </label>
+              <label>
+                Quantite
+                <input name="quantity" type="number" min="1" required value="1" />
+              </label>
+              <button class="btn" type="submit">Passer la commande</button>
+            </form>
+            <p id="order-feedback" class="feedback"></p>
+          </section>
+
+          <section class="panel panel-wide">
+            <div class="panel-head">
+              <h2>Commandes recentes</h2>
+              <button id="refresh-orders-client" class="btn btn-ghost" type="button">Rafraichir</button>
+            </div>
+            <div id="orders-client" class="list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-admin" class="view">
+        <div class="layout admin-layout">
+          <section class="panel panel-wide">
+            <div class="panel-head">
+              <h2>Dashboard admin</h2>
+              <button id="refresh-admin" class="btn btn-ghost" type="button">Actualiser KPI</button>
+            </div>
+            <div class="kpi-grid">
+              <article class="kpi"><p>Produits</p><strong id="kpi-products">0</strong></article>
+              <article class="kpi"><p>Clients</p><strong id="kpi-users">0</strong></article>
+              <article class="kpi"><p>Commandes</p><strong id="kpi-orders">0</strong></article>
+              <article class="kpi"><p>CA total</p><strong id="kpi-revenue">0 EUR</strong></article>
+            </div>
+            <p id="kpi-stock-alert" class="muted"></p>
+          </section>
+
+          <section class="panel">
+            <h2>Admin produits</h2>
+            <form id="admin-product-form" class="stack">
+              <label>
+                Product ID (vide = creation)
+                <input name="id" type="number" min="1" placeholder="ex: 4" />
+              </label>
+              <label>
+                Prenom pizza
+                <input name="name" type="text" required placeholder="ex: Kevin" />
+              </label>
+              <label>
+                Taille
+                <select name="size" required>
+                  <option value="U9">U9</option>
+                  <option value="U12">U12</option>
+                  <option value="U15">U15</option>
+                </select>
+              </label>
+              <label>
+                Prix (>= 1000)
+                <input name="price" type="number" step="0.01" min="1000" required placeholder="1999.99" />
+              </label>
+              <label>
+                Stock
+                <input name="stock" type="number" min="0" required value="10" />
+              </label>
+              <div class="inline-actions">
+                <button class="btn" type="submit">Creer / Mettre a jour</button>
+                <button id="delete-product-btn" class="btn btn-danger" type="button">Supprimer ID</button>
+              </div>
+            </form>
+            <p id="admin-product-feedback" class="feedback"></p>
+          </section>
+
+          <section class="panel">
+            <h2>Admin users</h2>
+            <form id="admin-user-form" class="stack">
+              <label>
+                User ID (obligatoire)
+                <input name="id" type="number" min="1" required placeholder="ex: 2" />
+              </label>
+              <label>
+                Nouveau pseudo (optionnel)
+                <input name="username" type="text" placeholder="ex: chefclient" />
+              </label>
+              <label>
+                Nouvel email (optionnel)
+                <input name="email" type="email" placeholder="ex: client@luxe.com" />
+              </label>
+              <label>
+                Nouveau mot de passe (optionnel)
+                <input name="password" type="password" minlength="6" />
+              </label>
+              <div class="inline-actions">
+                <button class="btn" type="submit">Mettre a jour</button>
+                <button id="delete-user-btn" class="btn btn-danger" type="button">Supprimer user</button>
+              </div>
+            </form>
+            <p id="admin-user-feedback" class="feedback"></p>
+          </section>
+
+          <section class="panel">
+            <h2>Admin orders</h2>
+            <form id="admin-order-form" class="stack">
+              <label>
+                Order ID
+                <input name="id" type="number" min="1" required placeholder="ex: 5" />
+              </label>
+              <label>
+                Nouveau statut
+                <select name="status" required>
+                  <option value="created">created</option>
+                  <option value="validated">validated</option>
+                  <option value="cancelled">cancelled</option>
+                </select>
+              </label>
+              <div class="inline-actions">
+                <button class="btn" type="submit">Mettre a jour statut</button>
+                <button id="delete-order-btn" class="btn btn-danger" type="button">Supprimer order</button>
+              </div>
+            </form>
+            <p id="admin-order-feedback" class="feedback"></p>
+          </section>
+
+          <section class="panel panel-wide">
+            <div class="panel-head">
+              <h2>Table produits</h2>
+              <button id="refresh-products-admin" class="btn btn-ghost" type="button">Rafraichir</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>ID</th><th>Prenom</th><th>Taille</th><th>Prix</th><th>Stock</th></tr>
+                </thead>
+                <tbody id="products-admin-table"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel panel-wide">
+            <div class="panel-head">
+              <h2>Table users</h2>
+              <button id="refresh-users-admin" class="btn btn-ghost" type="button">Rafraichir</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>ID</th><th>Username</th><th>Email</th><th>Cree le</th></tr>
+                </thead>
+                <tbody id="users-admin-table"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel panel-wide">
+            <div class="panel-head">
+              <h2>Table orders</h2>
+              <div class="inline-actions">
+                <input id="orders-filter-user" type="number" min="1" placeholder="Filtrer par user_id" />
+                <button id="filter-orders-admin" class="btn btn-ghost" type="button">Filtrer</button>
+                <button id="refresh-orders-admin" class="btn btn-ghost" type="button">Tous</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>ID</th><th>User</th><th>Produit</th><th>Qt</th><th>Total</th><th>Statut</th></tr>
+                </thead>
+                <tbody id="orders-admin-table"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

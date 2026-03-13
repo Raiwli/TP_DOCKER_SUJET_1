@@ -1,0 +1,171 @@
+services:
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      users:
+        condition: service_healthy
+      products:
+        condition: service_healthy
+      orders:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - api-network
+
+  users-db:
+    image: postgres:16-alpine
+    container_name: users-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${USERS_DB}
+    volumes:
+      - users-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${USERS_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - users-db-network
+
+  products-db:
+    image: postgres:16-alpine
+    container_name: products-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${PRODUCTS_DB}
+    volumes:
+      - products-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${PRODUCTS_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - products-db-network
+
+  orders-db:
+    image: postgres:16-alpine
+    container_name: orders-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${ORDERS_DB}
+    volumes:
+      - orders-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${ORDERS_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - orders-db-network
+
+  users:
+    build:
+      context: ./services/users
+      dockerfile: Dockerfile
+    container_name: users
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_URL: ${USERS_DB_URL}
+    depends_on:
+      users-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health').read()"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - api-network
+      - users-db-network
+
+  products:
+    build:
+      context: ./services/products
+      dockerfile: Dockerfile
+    container_name: products
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_URL: ${PRODUCTS_DB_URL}
+      SEED_PRODUCTS: "true"
+    depends_on:
+      products-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5002/health').read()"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - api-network
+      - products-db-network
+
+  orders:
+    build:
+      context: ./services/orders
+      dockerfile: Dockerfile
+    container_name: orders
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_URL: ${ORDERS_DB_URL}
+      PRODUCTS_SERVICE_URL: ${PRODUCTS_SERVICE_URL}
+    depends_on:
+      orders-db:
+        condition: service_healthy
+      products:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5003/health').read()"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - api-network
+      - orders-db-network
+
+volumes:
+  users-db-data:
+  products-db-data:
+  orders-db-data:
+
+networks:
+  api-network:
+  users-db-network:
+  products-db-network:
+  orders-db-network:
